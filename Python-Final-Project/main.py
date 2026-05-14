@@ -68,12 +68,16 @@ class MyGUI:
         table_frame = tk.Frame(master)
         table_frame.pack()
 
-        columns = ("ID", "Name", "Age", "Grade", "Gender", "GPA", "Subject")
+        columns = ("#", "ID", "Name", "Age", "Grade", "Gender", "GPA", "Subject")
 
         self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=15)
+
         for col in columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=120)
+            if col == "#":
+                self.tree.column(col, width=40, anchor="center")
+            else:
+                self.tree.column(col, width=120)
 
         self.tree.pack(side=tk.LEFT)
 
