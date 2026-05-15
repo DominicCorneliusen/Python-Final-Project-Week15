@@ -19,6 +19,7 @@ class Database:
         self.cursor = self.conn.cursor()
         self.create_table()
 
+    # create the table
     def create_table(self):
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS students (
@@ -33,6 +34,7 @@ class Database:
         """)
         self.conn.commit()
 
+    # make random unique ID
     def generate_unique_id(self):
         while True:
             new_id = random.randint(1000, 9999)
@@ -40,6 +42,7 @@ class Database:
             if not self.cursor.fetchone():
                 return new_id
 
+    # add student
     def add_student(self, student_ID, Name, Age, Grade, Gender, GPA, Advisor):
         self.cursor.execute("""
             INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Advisor)
@@ -47,10 +50,12 @@ class Database:
         """, (student_ID, Name, Age, Grade, Gender, GPA, Advisor))
         self.conn.commit()
 
+    # get student
     def get_students(self):
         self.cursor.execute("SELECT * FROM students")
         return self.cursor.fetchall()
 
+    # update student
     def update_student(self, student_ID, Name, Age, Grade, Gender, GPA, Advisor):
         self.cursor.execute("""
             UPDATE students
@@ -59,10 +64,12 @@ class Database:
         """, (Name, Age, Grade, Gender, GPA, Advisor, student_ID))
         self.conn.commit()
 
+    # delete student
     def delete_student(self, student_ID):
         self.cursor.execute("DELETE FROM students WHERE student_ID=?", (student_ID,))
         self.conn.commit()
 
+    # export file
     def export_to(self, filename):
         conn2 = sqlite3.connect(filename)
         cur2 = conn2.cursor()
@@ -103,7 +110,7 @@ class Database:
             """, row)
         self.conn.commit()
 
-
+# make the GUI
 class MyGUI:
     def __init__(self, master):
         self.master = master
@@ -114,7 +121,7 @@ class MyGUI:
 
         table_frame = tk.Frame(master)
         table_frame.pack()
-
+        # make columns
         columns = ("#", "ID", "Name", "Age", "Grade", "Gender", "GPA", "Advisor")
 
         self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=15)
@@ -127,14 +134,14 @@ class MyGUI:
                 self.tree.column(col, width=120)
 
         self.tree.pack(side=tk.LEFT)
-
+        # make scroll bar
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         button_frame = tk.Frame(master)
         button_frame.pack(pady=10)
-
+        # make buttons
         tk.Button(button_frame, text="Add Entry", width=15, command=self.add_entry).grid(row=0, column=0, padx=5)
         tk.Button(button_frame, text="Edit Entry", width=15, command=self.edit_entry).grid(row=0, column=1, padx=5)
         tk.Button(button_frame, text="Delete Entry", width=15, command=self.delete_entry).grid(row=0, column=2, padx=5)
@@ -144,6 +151,7 @@ class MyGUI:
 
         self.refresh()
 
+    # get gender
     def get_gender(self, initial="Male"):
         win = tk.Toplevel(self.master)
         win.title("Select Gender")
@@ -168,6 +176,7 @@ class MyGUI:
 
         return result["gender"]
 
+    # refresh
     def refresh(self):
         for row in self.tree.get_children():
             self.tree.delete(row)
@@ -177,6 +186,7 @@ class MyGUI:
             numbered_row = (index,) + row
             self.tree.insert("", tk.END, values=numbered_row)
 
+    # add entry
     def add_entry(self):
         name = simpledialog.askstring("Add Entry", "Enter name:", parent=self.master)
         if not name:
@@ -207,6 +217,7 @@ class MyGUI:
         self.refresh()
         messagebox.showinfo("Success", f"Student added successfully.\nAssigned ID: {student_ID}")
 
+    # edit entry
     def edit_entry(self):
         selected = self.tree.selection()
         if not selected:
@@ -243,6 +254,7 @@ class MyGUI:
         self.refresh()
         messagebox.showinfo("Success", "Student updated successfully.")
 
+    # delete entry
     def delete_entry(self):
         selected = self.tree.selection()
         if not selected:
@@ -256,12 +268,14 @@ class MyGUI:
             self.refresh()
             messagebox.showinfo("Deleted", "Student deleted successfully.")
 
+    # save file
     def save_as(self):
         filename = filedialog.asksaveasfilename(defaultextension=".db", filetypes=[("Database Files", "*.db")])
         if filename:
             self.db.export_to(filename)
             messagebox.showinfo("Saved", "Database exported successfully.")
 
+    # import file
     def import_db(self):
         filename = filedialog.askopenfilename(filetypes=[("Database Files", "*.db")])
         if filename:
