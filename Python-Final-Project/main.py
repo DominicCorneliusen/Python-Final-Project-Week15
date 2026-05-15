@@ -138,7 +138,6 @@ class MyGUI:
         tk.Button(button_frame, text="Add Entry", width=15, command=self.add_entry).grid(row=0, column=0, padx=5)
         tk.Button(button_frame, text="Edit Entry", width=15, command=self.edit_entry).grid(row=0, column=1, padx=5)
         tk.Button(button_frame, text="Delete Entry", width=15, command=self.delete_entry).grid(row=0, column=2, padx=5)
-        tk.Button(button_frame, text="Refresh", width=15, command=self.refresh).grid(row=0, column=3, padx=5)
         tk.Button(button_frame, text="Save As...", width=15, command=self.save_as).grid(row=0, column=4, padx=5)
         tk.Button(button_frame, text="Import DB", width=15, command=self.import_db).grid(row=0, column=5, padx=5)
         tk.Button(button_frame, text="Quit", width=15, command=master.destroy).grid(row=0, column=6, padx=5)
