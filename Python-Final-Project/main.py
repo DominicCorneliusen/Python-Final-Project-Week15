@@ -28,7 +28,7 @@ class Database:
                 Grade INTEGER,
                 Gender TEXT,
                 GPA REAL,
-                Subject TEXT
+                Avdisory TEXT
             )
         """)
         self.conn.commit()
@@ -42,7 +42,7 @@ class Database:
 
     def add_student(self, student_ID, Name, Age, Grade, Gender, GPA, Subject):
         self.cursor.execute("""
-            INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Subject)
+            INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Avdisory)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (student_ID, Name, Age, Grade, Gender, GPA, Subject))
         self.conn.commit()
@@ -54,7 +54,7 @@ class Database:
     def update_student(self, student_ID, Name, Age, Grade, Gender, GPA, Subject):
         self.cursor.execute("""
             UPDATE students
-            SET Name=?, Age=?, Grade=?, Gender=?, GPA=?, Subject=?
+            SET Name=?, Age=?, Grade=?, Gender=?, GPA=?, Avdisory=?
             WHERE student_ID=?
         """, (Name, Age, Grade, Gender, GPA, Subject, student_ID))
         self.conn.commit()
@@ -74,7 +74,7 @@ class Database:
                 Grade INTEGER,
                 Gender TEXT,
                 GPA REAL,
-                Subject TEXT
+                Avdisory TEXT
             )
         """)
         conn2.commit()
@@ -82,7 +82,7 @@ class Database:
         conn2.commit()
         for row in self.get_students():
             cur2.execute("""
-                INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Subject)
+                INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Avdisory)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """, row)
         conn2.commit()
@@ -98,7 +98,7 @@ class Database:
         self.conn.commit()
         for row in rows:
             self.cursor.execute("""
-                INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Subject)
+                INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Avdisory)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """, row)
         self.conn.commit()
@@ -115,7 +115,7 @@ class MyGUI:
         table_frame = tk.Frame(master)
         table_frame.pack()
 
-        columns = ("#", "ID", "Name", "Age", "Grade", "Gender", "GPA", "Subject")
+        columns = ("#", "ID", "Name", "Age", "Grade", "Gender", "GPA", "Avdisory")
 
         self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=15)
 
@@ -197,8 +197,8 @@ class MyGUI:
             messagebox.showerror("Error", "GPA must be between 0 and 4.")
             return
 
-        subject = simpledialog.askstring("Add Entry", "Enter subject:", parent=self.master)
-        if not subject:
+        avdisory = simpledialog.askstring("Add Entry", "Enter Advisor Last Name:", parent=self.master)
+        if not avdisory:
             return
 
         student_ID = self.db.generate_unique_id()
@@ -235,7 +235,7 @@ class MyGUI:
             messagebox.showerror("Error", "GPA must be between 0 and 4.")
             return
 
-        subject = simpledialog.askstring("Edit Entry", "Enter new subject:", initialvalue=current[7], parent=self.master)
+        avdisory = simpledialog.askstring("Edit Entry", "Enter new advisor:", initialvalue=current[7], parent=self.master)
         if not subject:
             return
 
