@@ -28,7 +28,7 @@ class Database:
                 Grade INTEGER,
                 Gender TEXT,
                 GPA REAL,
-                Avdisory TEXT
+                Advisor TEXT
             )
         """)
         self.conn.commit()
@@ -40,23 +40,23 @@ class Database:
             if not self.cursor.fetchone():
                 return new_id
 
-    def add_student(self, student_ID, Name, Age, Grade, Gender, GPA, Subject):
+    def add_student(self, student_ID, Name, Age, Grade, Gender, GPA, Advisor):
         self.cursor.execute("""
-            INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Avdisory)
+            INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Advisor)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (student_ID, Name, Age, Grade, Gender, GPA, Subject))
+        """, (student_ID, Name, Age, Grade, Gender, GPA, Advisor))
         self.conn.commit()
 
     def get_students(self):
         self.cursor.execute("SELECT * FROM students")
         return self.cursor.fetchall()
 
-    def update_student(self, student_ID, Name, Age, Grade, Gender, GPA, Subject):
+    def update_student(self, student_ID, Name, Age, Grade, Gender, GPA, Advisor):
         self.cursor.execute("""
             UPDATE students
-            SET Name=?, Age=?, Grade=?, Gender=?, GPA=?, Avdisory=?
+            SET Name=?, Age=?, Grade=?, Gender=?, GPA=?, Advisor=?
             WHERE student_ID=?
-        """, (Name, Age, Grade, Gender, GPA, Subject, student_ID))
+        """, (Name, Age, Grade, Gender, GPA, Advisor, student_ID))
         self.conn.commit()
 
     def delete_student(self, student_ID):
@@ -74,7 +74,7 @@ class Database:
                 Grade INTEGER,
                 Gender TEXT,
                 GPA REAL,
-                Avdisory TEXT
+                Advisor TEXT
             )
         """)
         conn2.commit()
@@ -82,7 +82,7 @@ class Database:
         conn2.commit()
         for row in self.get_students():
             cur2.execute("""
-                INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Avdisory)
+                INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Advisor)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """, row)
         conn2.commit()
@@ -98,7 +98,7 @@ class Database:
         self.conn.commit()
         for row in rows:
             self.cursor.execute("""
-                INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Avdisory)
+                INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Advisor)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """, row)
         self.conn.commit()
@@ -115,7 +115,7 @@ class MyGUI:
         table_frame = tk.Frame(master)
         table_frame.pack()
 
-        columns = ("#", "ID", "Name", "Age", "Grade", "Gender", "GPA", "Avdisory")
+        columns = ("#", "ID", "Name", "Age", "Grade", "Gender", "GPA", "Advisor")
 
         self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=15)
 
@@ -197,13 +197,13 @@ class MyGUI:
             messagebox.showerror("Error", "GPA must be between 0 and 4.")
             return
 
-        avdisory = simpledialog.askstring("Add Entry", "Enter Advisor Last Name:", parent=self.master)
-        if not avdisory:
+        Advisor = simpledialog.askstring("Add Entry", "Enter Advisor Last Name:", parent=self.master)
+        if not Advisor:
             return
 
         student_ID = self.db.generate_unique_id()
 
-        self.db.add_student(student_ID, name, age, grade, gender, gpa, subject)
+        self.db.add_student(student_ID, name, age, grade, gender, gpa, Advisor)
         self.refresh()
         messagebox.showinfo("Success", f"Student added successfully.\nAssigned ID: {student_ID}")
 
@@ -235,11 +235,11 @@ class MyGUI:
             messagebox.showerror("Error", "GPA must be between 0 and 4.")
             return
 
-        avdisory = simpledialog.askstring("Edit Entry", "Enter new advisor:", initialvalue=current[7], parent=self.master)
-        if not subject:
+        Advisor = simpledialog.askstring("Edit Entry", "Enter new advisor:", initialvalue=current[7], parent=self.master)
+        if not Advisor:
             return
 
-        self.db.update_student(student_ID, name, age, grade, gender, gpa, subject)
+        self.db.update_student(student_ID, name, age, grade, gender, gpa, Advisor)
         self.refresh()
         messagebox.showinfo("Success", "Student updated successfully.")
 
