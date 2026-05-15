@@ -2,19 +2,19 @@
 # Authors: Dominic Corneliusen and Josiah Bliss
 # Date last modified: 5/11/2026
 # Date last modified: 5/13/2026
+# Date last modified: 5/14/2026
 
 import sqlite3
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
-'''
+from tkinter import messagebox, simpledialog, ttk, filedialog
+import random
 import os
-#Is this necessary? Should we add an option to save and an option to open a file?
- 
-if os.path.exists("students.db"):
-    os.remove("students.db")
-'''
+
 class Database:
     def __init__(self):
+        if os.path.exists("students.db"):
+            os.remove("students.db")
+
         self.conn = sqlite3.connect("students.db")
         self.cursor = self.conn.cursor()
         self.create_table()
@@ -22,7 +22,7 @@ class Database:
     def create_table(self):
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS students (
-                student_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_ID INTEGER PRIMARY KEY,
                 Name TEXT NOT NULL,
                 Age INTEGER,
                 Grade INTEGER,
@@ -33,11 +33,18 @@ class Database:
         """)
         self.conn.commit()
 
-    def add_student(self, Name, Age, Grade, Gender, GPA, Subject):
+    def generate_unique_id(self):
+        while True:
+            new_id = random.randint(1000, 9999)
+            self.cursor.execute("SELECT 1 FROM students WHERE student_ID=?", (new_id,))
+            if not self.cursor.fetchone():
+                return new_id
+
+    def add_student(self, student_ID, Name, Age, Grade, Gender, GPA, Subject):
         self.cursor.execute("""
-            INSERT INTO students (Name, Age, Grade, Gender, GPA, Subject)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (Name, Age, Grade, Gender, GPA, Subject))
+            INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Subject)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (student_ID, Name, Age, Grade, Gender, GPA, Subject))
         self.conn.commit()
 
     def get_students(self):
@@ -54,6 +61,46 @@ class Database:
 
     def delete_student(self, student_ID):
         self.cursor.execute("DELETE FROM students WHERE student_ID=?", (student_ID,))
+        self.conn.commit()
+
+    def export_to(self, filename):
+        conn2 = sqlite3.connect(filename)
+        cur2 = conn2.cursor()
+        cur2.execute("""
+            CREATE TABLE IF NOT EXISTS students (
+                student_ID INTEGER PRIMARY KEY,
+                Name TEXT NOT NULL,
+                Age INTEGER,
+                Grade INTEGER,
+                Gender TEXT,
+                GPA REAL,
+                Subject TEXT
+            )
+        """)
+        conn2.commit()
+        cur2.execute("DELETE FROM students")
+        conn2.commit()
+        for row in self.get_students():
+            cur2.execute("""
+                INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Subject)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, row)
+        conn2.commit()
+        conn2.close()
+
+    def import_from(self, filename):
+        conn2 = sqlite3.connect(filename)
+        cur2 = conn2.cursor()
+        cur2.execute("SELECT * FROM students")
+        rows = cur2.fetchall()
+        conn2.close()
+        self.cursor.execute("DELETE FROM students")
+        self.conn.commit()
+        for row in rows:
+            self.cursor.execute("""
+                INSERT INTO students (student_ID, Name, Age, Grade, Gender, GPA, Subject)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, row)
         self.conn.commit()
 
 
@@ -92,7 +139,9 @@ class MyGUI:
         tk.Button(button_frame, text="Edit Entry", width=15, command=self.edit_entry).grid(row=0, column=1, padx=5)
         tk.Button(button_frame, text="Delete Entry", width=15, command=self.delete_entry).grid(row=0, column=2, padx=5)
         tk.Button(button_frame, text="Refresh", width=15, command=self.refresh).grid(row=0, column=3, padx=5)
-        tk.Button(button_frame, text="Quit", width=15, command=master.destroy).grid(row=0, column=4, padx=5)
+        tk.Button(button_frame, text="Save As...", width=15, command=self.save_as).grid(row=0, column=4, padx=5)
+        tk.Button(button_frame, text="Import DB", width=15, command=self.import_db).grid(row=0, column=5, padx=5)
+        tk.Button(button_frame, text="Quit", width=15, command=master.destroy).grid(row=0, column=6, padx=5)
 
         self.refresh()
 
@@ -124,36 +173,40 @@ class MyGUI:
         for row in self.tree.get_children():
             self.tree.delete(row)
 
-        for row in self.db.get_students():
-            self.tree.insert("", tk.END, values=row)
+        students = self.db.get_students()
+        for index, row in enumerate(students, start=1):
+            numbered_row = (index,) + row
+            self.tree.insert("", tk.END, values=numbered_row)
 
     def add_entry(self):
-        name = simpledialog.askstring("Add Entry", "Enter name:")
+        name = simpledialog.askstring("Add Entry", "Enter name:", parent=self.master)
         if not name:
             return
 
-        age = simpledialog.askinteger("Add Entry", "Enter age:")
+        age = simpledialog.askinteger("Add Entry", "Enter age:", parent=self.master)
         if age is None:
             return
 
-        grade = simpledialog.askinteger("Add Entry", "Enter grade:")
+        grade = simpledialog.askinteger("Add Entry", "Enter grade:", parent=self.master)
         if grade is None:
             return
 
         gender = self.get_gender()
 
-        gpa = simpledialog.askfloat("Add Entry", "Enter GPA:")
+        gpa = simpledialog.askfloat("Add Entry", "Enter GPA:", parent=self.master)
         if gpa is None or not (0 <= gpa <= 4):
             messagebox.showerror("Error", "GPA must be between 0 and 4.")
             return
 
-        subject = simpledialog.askstring("Add Entry", "Enter subject:")
+        subject = simpledialog.askstring("Add Entry", "Enter subject:", parent=self.master)
         if not subject:
             return
 
-        self.db.add_student(name, age, grade, gender, gpa, subject)
+        student_ID = self.db.generate_unique_id()
+
+        self.db.add_student(student_ID, name, age, grade, gender, gpa, subject)
         self.refresh()
-        messagebox.showinfo("Success", "Student added successfully.")
+        messagebox.showinfo("Success", f"Student added successfully.\nAssigned ID: {student_ID}")
 
     def edit_entry(self):
         selected = self.tree.selection()
@@ -162,28 +215,28 @@ class MyGUI:
             return
 
         current = self.tree.item(selected[0], "values")
-        student_ID = current[0]
+        student_ID = current[1]
 
-        name = simpledialog.askstring("Edit Entry", "Enter new name:", initialvalue=current[1])
+        name = simpledialog.askstring("Edit Entry", "Enter new name:", initialvalue=current[2], parent=self.master)
         if not name:
             return
 
-        age = simpledialog.askinteger("Edit Entry", "Enter new age:", initialvalue=current[2])
+        age = simpledialog.askinteger("Edit Entry", "Enter new age:", initialvalue=current[3], parent=self.master)
         if age is None:
             return
 
-        grade = simpledialog.askinteger("Edit Entry", "Enter new grade:", initialvalue=current[3])
+        grade = simpledialog.askinteger("Edit Entry", "Enter new grade:", initialvalue=current[4], parent=self.master)
         if grade is None:
             return
 
-        gender = self.get_gender(initial=current[4])
+        gender = self.get_gender(initial=current[5])
 
-        gpa = simpledialog.askfloat("Edit Entry", "Enter new GPA:", initialvalue=current[5])
+        gpa = simpledialog.askfloat("Edit Entry", "Enter new GPA:", initialvalue=current[6], parent=self.master)
         if gpa is None or not (0 <= gpa <= 4):
             messagebox.showerror("Error", "GPA must be between 0 and 4.")
             return
 
-        subject = simpledialog.askstring("Edit Entry", "Enter new subject:", initialvalue=current[6])
+        subject = simpledialog.askstring("Edit Entry", "Enter new subject:", initialvalue=current[7], parent=self.master)
         if not subject:
             return
 
@@ -197,12 +250,25 @@ class MyGUI:
             messagebox.showerror("Error", "Please select a row to delete.")
             return
 
-        student_ID = self.tree.item(selected[0], "values")[0]
+        student_ID = self.tree.item(selected[0], "values")[1]
 
         if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this student?"):
             self.db.delete_student(student_ID)
             self.refresh()
             messagebox.showinfo("Deleted", "Student deleted successfully.")
+
+    def save_as(self):
+        filename = filedialog.asksaveasfilename(defaultextension=".db", filetypes=[("Database Files", "*.db")])
+        if filename:
+            self.db.export_to(filename)
+            messagebox.showinfo("Saved", "Database exported successfully.")
+
+    def import_db(self):
+        filename = filedialog.askopenfilename(filetypes=[("Database Files", "*.db")])
+        if filename:
+            self.db.import_from(filename)
+            self.refresh()
+            messagebox.showinfo("Imported", "Database imported successfully.")
 
 
 root = tk.Tk()
